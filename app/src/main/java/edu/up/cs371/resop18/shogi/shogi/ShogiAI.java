@@ -1,30 +1,25 @@
 package edu.up.cs371.resop18.shogi.shogi;
 
-public class ShogiAI {
-    public ShogiGameState gameState;
-    private ShogiPiece[][] bestChild = new ShogiPiece[10][9];
+import java.util.Random;
 
-    protected int numMoves = 20;
-    protected int oldRow, oldCol;
-    protected int newRow, newCol;
+public class ShogiAI {
+    private ShogiPiece[][] bestChild = new ShogiPiece[11][9];
+
+    private int numMoves = 50;
     private int count = 0;
+    private int depth = 0;
 
     /**
      * ShogiAI Constructor which takes in the Game State and Max Depth desired in the minimax evaluation
      *
      * @param gState the current Game State
-     * @param MAX_DEPTH
+     * @param MAX_DEPTH max depth of recursion
      */
     public ShogiAI(ShogiGameState gState, int MAX_DEPTH){
-        gameState = gState;
-        ShogiPiece[][] gameBoard = gameState.pieces; //Gets the current game board
-
-        int depth = 0;
-
         double start = (double)System.currentTimeMillis();
-        double bestVal = eval(gameBoard, -1000.0, 1000.0, true, depth, MAX_DEPTH);
+        eval(gState.getCurrentBoard(), -1000.0, 1000.0, true, depth, MAX_DEPTH);
         double end = (double)System.currentTimeMillis();
-        timeMinutes(start, end, depth);
+        timeMinutes(start, end, MAX_DEPTH);
     }
 
     /**
@@ -35,13 +30,17 @@ public class ShogiAI {
      * @param depth
      */
     private void timeMinutes(double start, double end, int depth){
-        double seconds = (end-start)/1000;
+        double seconds = Math.floor(100.0*(end-start)/1000)/100.0;
         int minutes = 0;
         while(seconds >= 60){
             seconds -= 60;
             minutes++;
         }
-        System.out.println("It took "+minutes+" minutes "+seconds+" seconds for depth "+depth+".");
+        if((end-start)/1000 < 60){
+            System.out.println("It took "+seconds+" seconds for depth "+depth+".");
+        }else {
+            System.out.println("It took "+minutes+" minutes "+seconds+" seconds for depth "+depth+".");
+        }
     }
 
     /**
@@ -52,6 +51,10 @@ public class ShogiAI {
      */
     public void printTime(double start, double end){ System.out.println("It took " + (end-start)/1000 + " seconds."); }
 
+    public void printTime(String task, double start, double end){
+        System.out.println(task+" took "+(end-start)/1000+" seconds.");
+    }
+
     /**
      * Takes a parameter of a board and prints out the board
      *
@@ -59,7 +62,7 @@ public class ShogiAI {
      */
     public void printBoard(ShogiPiece[][] board){
         count += 1;
-        for(int i = 0; i < board.length; i++){
+        for(int i = 1; i < board.length-1; i++){
             for(int j = 0; j < board[i].length; j++){
                 if(board[i][j] == null){
                     System.out.print("null ");
@@ -87,8 +90,7 @@ public class ShogiAI {
      * @param b
      * @return returns the max value between a and b
      */
-    public double max(double a, double b){ return (a > b) ? a : b; }
-
+    private double max(double a, double b){ return (a > b) ? a : b; }
 
     /**
      * Give the min of two values
@@ -97,7 +99,7 @@ public class ShogiAI {
      * @param b
      * @return returns the min value between a and b
      */
-    public double min(double a, double b){ return (a < b) ? a : b; }
+    private double min(double a, double b){ return (a < b) ? a : b; }
 
     /**
      * Takes in a state of the board and a move.
@@ -108,7 +110,7 @@ public class ShogiAI {
      * @return returns new board based on move
      */
     public ShogiPiece[][] newGameState(ShogiPiece[][] board, int[] move){
-        ShogiPiece[][] newBoard = new ShogiPiece[10][9];
+        ShogiPiece[][] newBoard = new ShogiPiece[11][9];
 
         //Deep copy the board into newBoard
         for(int i = 0; i < newBoard.length; i++){
@@ -117,6 +119,8 @@ public class ShogiAI {
                     newBoard[i][j] = new ShogiPiece(board[i][j].getRow(), board[i][j].getCol(), board[i][j].getPiece());
                     newBoard[i][j].setPlayer(board[i][j].getPlayer());
                     newBoard[i][j].promotePiece(board[i][j].getPromoted());
+                    newBoard[i][j].setInCheck(board[i][j].getInCheck());
+                    newBoard[i][j].setSelected(board[i][j].getSelected());
                 }
             }
         }
@@ -135,9 +139,12 @@ public class ShogiAI {
                 newBoard[row][col] = new ShogiPiece(row, col, board[oldRow][oldCol].getPiece());
                 newBoard[row][col].setPlayer(board[oldRow][oldCol].getPlayer());
                 newBoard[row][col].promotePiece(board[oldRow][oldCol].getPromoted());
+                newBoard[row][col].setInCheck(board[oldRow][oldCol].getInCheck());
+                newBoard[row][col].setSelected(board[oldRow][oldCol].getSelected());
                 newBoard[oldRow][oldCol] = null;
             }
         }
+
         return newBoard;
     }
 
@@ -161,24 +168,22 @@ public class ShogiAI {
                 if(a == numMoves){ break; }
                 if(board[row][col] != null){
                     piece = board[row][col];
-                    if (!piece.getPlayer()){
+                    if(max == !piece.getPlayer()){
                         //Gets all moves for current piece
                         int[][] possibleMoves = m.moves(board, piece.getPiece(), piece.getRow(), piece.getCol());
 
                         //Adds all moves for piece to list of legal moves
                         for (int i = 0; i < 20; i++) {
-                            if (possibleMoves[i] == null) {
-                                continue;
-                            }
+                            if (possibleMoves[i] == null){ continue; }
                             list[a][i][0] = possibleMoves[i][0]; //Add new row to move
                             list[a][i][1] = possibleMoves[i][1]; //Add new col to move
 
                             list[a][i][2] = piece.getRow(); //Add current row to move
                             list[a][i][3] = piece.getCol(); //Add current col to move
                         }
+                        a++;
                     }
                 }
-                a++;
             }
         }
         return list;
@@ -193,39 +198,55 @@ public class ShogiAI {
      * @return returns all next possible states of the board based on actList
      */
     private ShogiPiece[][][] childList(ShogiPiece[][] board, int[][][] actList){
-        ShogiPiece[][][] list = new ShogiPiece[actList.length][10][9];
-
-        //System.out.println("Creating new childList");
+        ShogiPiece[][][] list = new ShogiPiece[actList.length][11][9];
+        int listLocation = 0;
 
         //This section is what takes the longest
         double start = (double)System.currentTimeMillis();
 
         //Goes through the length of actList to get moves
         for(int a = 0; a < actList.length; a++){
-        for(int i = 0; i < actList[a].length; i++) {
-            if(actList[a][i] == null){ break; } //If there are no moves it will stop stop
-            for(int j = 0; j < actList[a][i].length; j++) {
-                if(actList[a][i][j] < 0){ break; } //If there are no moves it will stop stop
+            if(listLocation == actList.length){ break; }
+            for(int i = 0; i < actList[a].length; i++) {
+                if(actList[a][i] == null){ break; } //If there are no moves it will stop stop
+                if(listLocation == actList.length){ break; }
+                for(int j = 0; j < actList[a][i].length; j++){
+                    if(listLocation == actList.length){ break; }
+                    if(actList[a][i][0] < 1 || actList[a][i][2] < 1){ break; } //If there are no moves it will stop
 
-                //Creates to state of the board based on the current board and the move at actList[i][j]
-                ShogiPiece[][] localBoard = newGameState(board, actList[a][i]);
+                    //Creates to state of the board based on the current board and the move at actList[i][j]
+                    ShogiPiece[][] localBoard = newGameState(board, actList[a][i]);
 
-                //Deep copies the localBoard into 'list', which is a list of all next states of the board
-                for(ShogiPiece[][] aList : list){
-                    for(int k = 0; k < localBoard.length; k++){
-                        for(int l = 0; l < localBoard[k].length; l++){
-                            if(localBoard[k][l] != null){
-                                aList[k][l] = new ShogiPiece(localBoard[k][l].getRow(), localBoard[k][l].getCol(), localBoard[k][l].getPiece());
-                                aList[k][l].setPlayer(localBoard[k][l].getPlayer());
-                                aList[k][l].promotePiece(localBoard[k][l].getPromoted());
+                    //Deep copies the localBoard into 'list', which is a list of all next states of the board
+                    if(listLocation < actList.length){
+                        for(int k = 0; k < localBoard.length; k++){
+                            for(int l = 0; l < localBoard[k].length; l++){
+                                if(localBoard[k][l] != null){
+                                    list[listLocation][k][l] = new ShogiPiece(localBoard[k][l].getRow(), localBoard[k][l].getCol(), localBoard[k][l].getPiece());
+                                    list[listLocation][k][l].setPlayer(localBoard[k][l].getPlayer());
+                                    list[listLocation][k][l].promotePiece(localBoard[k][l].getPromoted());
+                                    list[listLocation][k][l].setSelected(localBoard[k][l].getSelected());
+                                    list[listLocation][k][l].setInCheck(localBoard[k][l].getInCheck());
+                                }else{
+                                    list[listLocation][k][l] = null;
+                                }
                             }
                         }
+
+                        /*System.out.println("\nReference Board");
+                        printBoard(localBoard);
+                        System.out.println("Board from List");
+                        printBoard(list[listLocation]);*/
                     }
+
+                    listLocation++;
+
+                    localBoard = new ShogiPiece[11][9];
                 }
             }
-        }}
+        }
         double end = (double)System.currentTimeMillis();
-        //printTime(start, end);
+        //printTime("Child List", start, end);
         //System.out.println("Length of childList: " + list.length);
 
         return list;
@@ -235,21 +256,22 @@ public class ShogiAI {
      * This evaluated the current state of the board and branches out using recursion
      * to determine which moves is the best to take
      *
-     * @param board
-     * @param alpha
-     * @param beta
-     * @param MAX
-     * @param depth
-     * @param MAX_DEPTH
+     * @param board is the current board
+     * @param alpha mini for pruning
+     * @param beta max for pruning
+     * @param MAX AI or Player
+     * @param depth always going to be zero
+     * @param MAX_DEPTH depth you want
      * @return
      */
     public double eval(ShogiPiece[][] board, double alpha, double beta, boolean MAX, int depth, int MAX_DEPTH){
         double val; //Temporary holder for evaluation of child states
         int[][][] actList = actList(board, MAX); //Creates actList
+        shuffleArray(actList);
         ShogiPiece[][][] childList = childList(board, actList); //Creates childList
 
         if(depth > MAX_DEPTH){
-            return 0.5 + Math.random()*Math.random(); //Temporary heuristics until AI is known to work
+            return 0.5 + Math.random()*Math.random(); //Temporary heuristics until AI works
         }
 
         double bestVal = MAX ? -100 : +100; //temp max and min value for bestVal
@@ -264,19 +286,34 @@ public class ShogiAI {
              * Checks who's move it is and compares the evaluation of the child to the current bestVal
              * which ever child state is the best becomes assigned to bestChild
              */
-            if(MAX && -val > bestVal){
-                bestVal = max(-val, bestVal);
+            if(MAX && val > bestVal){
+                bestVal = max(val, bestVal);
                 alpha = max(alpha, bestVal);
                 bestChild = aChildList;
                 if(beta <= alpha){ break; } //Alpha-beta pruning
-            }else if(!MAX && val < bestVal){
-                bestVal = min(val, bestVal);
+            }else if(!MAX && -val < bestVal){
+                bestVal = min(-val, bestVal);
                 beta = min(beta, bestVal);
                 bestChild = aChildList;
                 if(beta <= alpha){ break; } //Alpha-beta pruning
             }
+
+            //System.out.println("Best Val: "+bestVal);
         }
 
         return bestVal; //returns bestVal
     }
+
+    private static void shuffleArray(int[][][] array){
+        int index;
+        int[][] temp;
+        Random random = new Random();
+        for (int i = array.length - 1; i > 0; i--){
+            index = random.nextInt(i + 1);
+            temp = array[index];
+            array[index] = array[i];
+            array[i] = temp;
+        }
+    }
+
 }

@@ -259,7 +259,7 @@ public class ShogiHumanPlayer extends GameHumanPlayer implements View.OnClickLis
 						game.sendAction(new ShogiMoveAction(this, currPieces[rowSel][colSel], row, col, rowSel, colSel));
 					}
 
-					vb.vibrate(100);
+					//vb.vibrate(100);
 
 					//reset
 					havePieceSelected = false;
@@ -322,7 +322,7 @@ public class ShogiHumanPlayer extends GameHumanPlayer implements View.OnClickLis
 						game.sendAction(new ShogiMoveAction(this, currPieces[rowSel][colSel], row, col, rowSel, colSel));
 					}
 
-					vb.vibrate(100);
+					//vb.vibrate(100);
 
 					//reset
 					havePieceSelected = false;

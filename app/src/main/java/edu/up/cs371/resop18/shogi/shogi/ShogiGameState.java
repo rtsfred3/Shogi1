@@ -1,7 +1,5 @@
 package edu.up.cs371.resop18.shogi.shogi;
 
-import android.util.Log;
-
 import java.io.Serializable;
 
 import edu.up.cs371.resop18.shogi.game.infoMsg.GameState;

@@ -27,7 +27,7 @@ public class ShogiGui extends SurfaceView{
     public static final float spaceDim = 150; //150 is height/width of rows & cols
     public static final float backBoardTopLeftX = 20; //20 is good
     public static final float backBoardTopLeftY = 125; //100 is good
-    public static final float topLeftX = 25 + spaceDim / 2; //95 is good
+    public static final float topLeftX = 0 + spaceDim / 2; //95 is good
     public static final float topLeftY = 125; //350 is good
     public boolean pieceIsSelected = false;
     private Bitmap background; //the bamboo background; made global so it wont have to be redrawn every onDraw
@@ -98,10 +98,15 @@ public class ShogiGui extends SurfaceView{
 
         float h = height/7;
         float w = width/(16.125f);
+        w = topLeftX;
+        h = topLeftY;
 
         //draw vertical lines; start xy is top point, end xy is bottom point
         for(i = 0; i < 10; i++) {
-            canvas.drawLine(w + i * spaceDim, h, w + i * spaceDim, h + 9 * spaceDim, square);
+            canvas.drawLine(w + i * spaceDim, h + spaceDim, w + i * spaceDim, h + 10 * spaceDim, square);
+        }
+
+        for(i = 1; i < 11; i++) {
             canvas.drawLine(w, h + i * spaceDim, w + 9 * spaceDim, h + i * spaceDim, square);
         }
 
